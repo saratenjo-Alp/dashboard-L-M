@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Ventas y Rechazos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=2">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <i data-lucide="bar-chart-2"></i>
+                <h2>DataAnalytics</h2>
+            </div>
+            <nav class="nav-menu" style="position: relative;">
+                <div class="nav-indicator"></div>
+                <a href="#overview" class="nav-item active"><i data-lucide="layout-dashboard"></i> Overview</a>
+                <a href="#rechazos" class="nav-item"><i data-lucide="alert-triangle"></i> Top Motivos de Rechazo</a>
+                <a href="#responsable-pago" class="nav-item"><i data-lucide="users"></i> Top 10 Clientes</a>
+                <a href="#reportes" class="nav-item"><i data-lucide="truck"></i> Rechazos por Placa</a>
+                <a href="#clientes" class="nav-item"><i data-lucide="package"></i> Top 10 Productos</a>
+                <a href="#ventas" class="nav-item"><i data-lucide="shopping-cart"></i> Tendencia Ventas vs Rechazos ($)</a>
+            </nav>
+            <div class="sidebar-footer">
+                <p>Data Junio 2026</p>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-titles">
+                    <h1>Rechazos L&M Cartagena</h1>
+                    <p class="subtitle">Analisis detallado de Ventas vs Rechazos</p>
+                </div>
+                <div class="header-actions">
+                    <button id="themeToggleBtn" class="btn btn-outline" style="border-color: var(--border-color); padding: 0.6rem;"><i data-lucide="sun"></i></button>
+                    <button id="clearFiltersBtn" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444; opacity: 0.5; cursor: not-allowed;"><i data-lucide="x-circle"></i> Limpiar Filtros</button>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="date" id="dateStart" class="btn btn-outline" style="background-color: var(--bg-card); color: var(--text-primary); cursor: pointer;" title="Fecha Inicial">
+                        <span style="color: var(--text-muted);">a</span>
+                        <input type="date" id="dateEnd" class="btn btn-outline" style="background-color: var(--bg-card); color: var(--text-primary); cursor: pointer;" title="Fecha Final">
+                    </div>
+                </div>
+            </header>
+
+            <section id="overview" class="top-kpis-wrapper">
+                <!-- Row 1 -->
+                <div class="kpi-row kpi-row-3">
+                    <div class="kpi-val-card">
+                        <div class="kpi-val-label">VENTA</div>
+                        <div class="kpi-val-number" id="kpi-venta-bruta">$0</div>
+                    </div>
+                    <div class="kpi-val-card">
+                        <div class="kpi-val-label">TOTAL RECHAZO</div>
+                        <div class="kpi-val-number kpi-val-number--danger" id="kpi-rechazo-val">$0</div>
+                    </div>
+                    <div class="kpi-val-card kpi-val-card--accent">
+                        <div class="kpi-val-label">RATIO DE RECHAZOS $</div>
+                        <div class="kpi-val-number" id="kpi-ratio">0%</div>
+                    </div>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="kpi-row kpi-row-4">
+                    <div class="kpi-val-card">
+                        <div class="kpi-val-label">TOTAL PEDIDOS</div>
+                        <div class="kpi-val-number" id="kpi-total-pedidos">0</div>
+                    </div>
+                    <div class="kpi-val-card">
+                        <div class="kpi-val-label">PEDIDOS ENTREGADOS</div>
+                        <div class="kpi-val-number kpi-val-number--success" id="kpi-entregados">0</div>
+                    </div>
+                    <div class="kpi-val-card">
+                        <div class="kpi-val-label">RECHAZOS TOTAL</div>
+                        <div class="kpi-val-number kpi-val-number--danger" id="kpi-rechazos-total">$0</div>
+                    </div>
+                    <div class="kpi-val-card">
+                        <div class="kpi-val-label">RECHAZOS PARCIALES</div>
+                        <div class="kpi-val-number kpi-val-number--warning" id="kpi-rechazos-parciales">$0</div>
+                    </div>
+                </div>
+
+                <!-- Row 3 -->
+                <div class="kpi-row kpi-row-3">
+                    <div class="kpi-card-gauge" style="display: flex; flex-direction: column; justify-content: center;">
+                        <div class="kpi-gauge-header">CUMPLIMIENTO PEDIDOS</div>
+                        <div class="kpi-gauge-wrap" style="height: 120px; margin: auto 0;">
+                            <canvas id="gaugeCumplimiento"></canvas>
+                            <div class="gauge-label-pct" id="gauge-cumplimiento-val">0%</div>
+                        </div>
+                        <div class="gauge-scale"><span>0 %</span><span>100 %</span></div>
+                    </div>
+                    <div class="kpi-card-gauge kpi-card-gauge--red" style="display: flex; flex-direction: column; justify-content: center;">
+                        <div class="kpi-gauge-header">RECHAZO PEDIDOS</div>
+                        <div class="kpi-gauge-wrap" style="height: 120px; margin: auto 0;">
+                            <canvas id="gaugeRechazo"></canvas>
+                            <div class="gauge-label-pct gauge-label-pct--red" id="gauge-rechazo-val">0%</div>
+                        </div>
+                        <div class="gauge-scale"><span>0 %</span><span>100 %</span></div>
+                    </div>
+                    <div class="chart-card" style="border:1px solid rgba(255,255,255,0.05); padding:1rem 1.25rem;">
+                        <div class="chart-header" style="margin-bottom:0.75rem;">
+                            <h3 style="font-size:0.85rem;">Rechazos por Responsable</h3>
+                            <div class="chart-actions"><i data-lucide="more-horizontal"></i></div>
+                        </div>
+                        <div class="chart-body" style="height:150px;">
+                            <canvas id="responsableChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="charts-grid">
+                <div id="rechazos" class="chart-card span-2">
+                    <div class="chart-header">
+                        <h3>Top Motivos de Rechazo</h3>
+                        <div class="chart-actions"><i data-lucide="more-horizontal"></i></div>
+                    </div>
+                    <div class="chart-body" style="min-height:450px;">
+                        <canvas id="motivoChart"></canvas>
+                    </div>
+                </div>
+
+                <div id="responsable-pago" class="chart-card table-card span-2">
+                    <div class="chart-header">
+                        <h3>Top 10 Clientes</h3>
+                        <div class="chart-actions"><i data-lucide="more-horizontal"></i></div>
+                    </div>
+                    <div class="chart-body" style="height:450px;">
+                        <canvas id="responsablePagoChart"></canvas>
+                    </div>
+                </div>
+
+                <div id="reportes" class="chart-card table-card span-2">
+                    <div class="chart-header">
+                        <h3>Rechazos por Placa</h3>
+                        <div class="chart-actions"><i data-lucide="more-horizontal"></i></div>
+                    </div>
+                    <div class="chart-body" style="height:450px;">
+                        <canvas id="placaChart"></canvas>
+                    </div>
+                </div>
+
+                <div id="clientes" class="chart-card table-card span-2">
+                    <div class="chart-header">
+                        <h3>Top 10 Productos</h3>
+                        <div class="chart-actions"><i data-lucide="more-horizontal"></i></div>
+                    </div>
+                    <div class="chart-body" style="height:450px;">
+                        <canvas id="clienteChart"></canvas>
+                    </div>
+                </div>
+
+                <div id="ventas" class="chart-card span-2">
+                    <div class="chart-header">
+                        <h3>Tendencia Ventas vs Rechazos ($)</h3>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="data.js?v=3"></script>
+    <script src="script.js?v=3"></script>
+</body>
+</html>
